@@ -216,11 +216,11 @@ class DataQualityAuditor:
         invalid_low = l > min_oc
         invalid_hl = h < l
         invalid_ohlc_mask = invalid_high | invalid_low | invalid_hl
-        invalid_ohlc_count = invalid_ohlc_mask.sum().item()
+        invalid_ohlc_count = invalid_ohlc_mask.sum()
 
         # 5. Non-positive prices (<= 0)
         zero_neg_mask = (o <= 0) | (h <= 0) | (l <= 0) | (c <= 0)
-        zero_or_negative_price_count = zero_neg_mask.sum().item()
+        zero_or_negative_price_count = zero_neg_mask.sum()
 
         # 6. Volume checks (volume < 0 or extreme outlier > 8 std)
         v = pd.Series(data["volume"], dtype=float)
@@ -228,18 +228,21 @@ class DataQualityAuditor:
         vol_mean = v.mean()
         vol_std = v.std()
         outlier_vol = v > (vol_mean + self.volume_outlier_std * vol_std) if vol_std > 0 else pd.Series(False, index=data.index)
-        abnormal_volume_count = (negative_vol | outlier_vol).sum().item()
+        abnormal_volume_count = (negative_vol | outlier_vol).sum()
 
         coverage = (total_candles / expected_candles * 100.0) if expected_candles > 0 else 100.0
         coverage = min(coverage, 100.0)
 
-        is_clean = (
+        if (
             missing_candles_count == 0
             and duplicate_count == 0
             and invalid_ohlc_count == 0
             and zero_or_negative_price_count == 0
-            and (negative_vol.sum().item() == 0)
-        )
+            and abnormal_volume_count == 0
+        ):
+            is_clean = True
+        else:
+            is_clean = False
 
         return DataQualityReport(
             symbol=symbol,
