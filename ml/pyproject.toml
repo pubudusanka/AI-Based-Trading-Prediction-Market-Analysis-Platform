@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-trading-ml"
+version = "0.1.0"
+description = "Machine learning and feature engineering pipeline for AI-based trading prediction"
+authors = [{ name = "Pubudu Sanka" }]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.4.0",
+    "xgboost>=2.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

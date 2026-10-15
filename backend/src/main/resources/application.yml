@@ -1,0 +1,38 @@
+server:
+  port: ${BACKEND_PORT:8080}
+
+spring:
+  application:
+    name: ai-trading-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:ai_trading}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres_secure_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# Trading Platform Specific Properties
+trading:
+  symbol: ${PRIMARY_ASSET:BTC/USDT}
+  timeframe: ${PRIMARY_TIMEFRAME:15m}
+  provider: ${MARKET_DATA_PROVIDER:BINANCE}
+  ml-service:
+    url: ${ML_SERVICE_URL:http://localhost:8001}
+
+logging:
+  level:
+    com.aitrading: INFO
+    org.springframework.web: INFO
