@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.api import app
+try:
+    from src.api import app
+except ModuleNotFoundError:
+    from api import app
 
 client = TestClient(app)
 

@@ -1,0 +1,18 @@
+{
+  "include": [
+    "ml"
+  ],
+  "extraPaths": [
+    "ml",
+    "ml/src"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "ml",
+      "extraPaths": [
+        ".",
+        "src"
+      ]
+    }
+  ]
+}

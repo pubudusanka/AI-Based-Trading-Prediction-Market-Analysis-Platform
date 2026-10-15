@@ -2,7 +2,6 @@ package com.aitrading.controller;
 
 import com.aitrading.model.DataIngestionRun;
 import com.aitrading.model.MarketCandle;
-import com.aitrading.model.MarketSymbol;
 import com.aitrading.repository.DataIngestionRunRepository;
 import com.aitrading.repository.MarketCandleRepository;
 import com.aitrading.repository.MarketSymbolRepository;

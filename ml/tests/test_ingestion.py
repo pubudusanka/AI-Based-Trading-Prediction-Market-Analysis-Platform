@@ -1,7 +1,10 @@
 from datetime import datetime, timezone, timedelta
 import pytest
 from unittest.mock import MagicMock
-from src.ingestion.collector import Candle, BinanceMarketDataClient
+try:
+    from src.ingestion.collector import Candle, BinanceMarketDataClient
+except ModuleNotFoundError:
+    from ingestion.collector import Candle, BinanceMarketDataClient
 
 def test_candle_valid():
     now = datetime.now(timezone.utc)

@@ -1,7 +1,10 @@
 from datetime import datetime, timezone, timedelta
 import pandas as pd
 import pytest
-from src.preprocessing.quality import DataQualityAuditor
+try:
+    from src.preprocessing.quality import DataQualityAuditor
+except ModuleNotFoundError:
+    from preprocessing.quality import DataQualityAuditor
 
 def create_sample_df(count: int = 10, interval_mins: int = 15, drop_indices = None):
     base_time = datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc)

@@ -25,8 +25,9 @@ public class BinanceMarketDataProvider implements MarketDataProvider {
     public BinanceMarketDataProvider(
         @Value("${trading.binance.base-url:https://api.binance.com}") String baseUrl
     ) {
+        String effectiveUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : "https://api.binance.com";
         this.restClient = RestClient.builder()
-            .baseUrl(baseUrl)
+            .baseUrl(effectiveUrl)
             .defaultHeader("User-Agent", "AI-Trading-Prediction-Platform/1.0")
             .build();
     }
