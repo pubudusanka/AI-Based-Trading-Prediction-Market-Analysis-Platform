@@ -129,12 +129,12 @@ class FeatureEngine:
         # ------------------------------------------------------------------
         candle_range = h - l
         # Safe range divisor to prevent division by zero in zero-range candles
-        safe_range = np.where(candle_range == 0, 1e-8, candle_range)
+        safe_range = candle_range.clip(lower=1e-8)
 
         feats["body_size"] = (c - o).abs()
         feats["body_percentage"] = feats["body_size"] / safe_range
-        feats["upper_wick"] = h - np.maximum(o, c)
-        feats["lower_wick"] = np.minimum(o, c) - l
+        feats["upper_wick"] = h - np.maximum(o.to_numpy(), c.to_numpy())
+        feats["lower_wick"] = np.minimum(o.to_numpy(), c.to_numpy()) - l
         feats["candle_range"] = candle_range
         feats["body_to_range_ratio"] = feats["body_size"] / safe_range
         feats["bullish_flag"] = (c > o).astype(int)
@@ -157,11 +157,11 @@ class FeatureEngine:
         # ------------------------------------------------------------------
         # RSI(14) with Wilder's smoothing
         delta = c.diff()
-        gain = np.where(delta > 0, delta, 0.0)
-        loss = np.where(delta < 0, -delta, 0.0)
-        roll_gain = pd.Series(gain, index=data.index).ewm(alpha=1/14, adjust=False).mean()
-        roll_loss = pd.Series(loss, index=data.index).ewm(alpha=1/14, adjust=False).mean()
-        rs = roll_gain / np.where(roll_loss == 0, 1e-8, roll_loss)
+        gain = delta.clip(lower=0.0)
+        loss = (-delta).clip(lower=0.0)
+        roll_gain = gain.ewm(alpha=1/14, adjust=False).mean()
+        roll_loss = loss.ewm(alpha=1/14, adjust=False).mean()
+        rs = roll_gain / roll_loss.clip(lower=1e-8)
         feats["rsi_14"] = 100.0 - (100.0 / (1.0 + rs))
 
         # MACD (12, 26, 9)
@@ -174,7 +174,7 @@ class FeatureEngine:
         # Stochastic (14, 3)
         low_14 = l.rolling(window=14).min()
         high_14 = h.rolling(window=14).max()
-        stoch_denom = np.where(high_14 == low_14, 1e-8, high_14 - low_14)
+        stoch_denom = (high_14 - low_14).clip(lower=1e-8)
         feats["stoch_k"] = ((c - low_14) / stoch_denom) * 100.0
         feats["stoch_d"] = feats["stoch_k"].rolling(window=3).mean()
 
@@ -189,14 +189,15 @@ class FeatureEngine:
         tr1 = h - l
         tr2 = (h - prev_close).abs()
         tr3 = (l - prev_close).abs()
-        true_range = np.maximum(tr1, np.maximum(tr2, tr3))
-        feats["atr_14"] = pd.Series(true_range, index=data.index).ewm(alpha=1/14, adjust=False).mean()
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        feats["atr_14"] = true_range.ewm(alpha=1/14, adjust=False).mean()
 
         # Bollinger Bands (20, 2)
         rolling_std = c.rolling(window=20).std()
         bb_upper = feats["sma_20"] + (2.0 * rolling_std)
         bb_lower = feats["sma_20"] - (2.0 * rolling_std)
-        feats["bb_width_20"] = (bb_upper - bb_lower) / np.where(feats["sma_20"] == 0, 1e-8, feats["sma_20"])
+        sma20_safe = feats["sma_20"].replace(0, 1e-8)
+        feats["bb_width_20"] = (bb_upper - bb_lower) / sma20_safe
         feats["rolling_std_20"] = feats["returns"].rolling(window=20).std()
 
         # ------------------------------------------------------------------
@@ -205,22 +206,25 @@ class FeatureEngine:
         # Directional Movement (+DM, -DM) and ADX(14)
         up_move = h - h.shift(1)
         down_move = l.shift(1) - l
-        plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
-        minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+        plus_dm_arr = np.where((up_move.to_numpy() > down_move.to_numpy()) & (up_move.to_numpy() > 0), up_move.to_numpy(), 0.0)
+        minus_dm_arr = np.where((down_move.to_numpy() > up_move.to_numpy()) & (down_move.to_numpy() > 0), down_move.to_numpy(), 0.0)
+        plus_dm = pd.Series(plus_dm_arr, index=data.index)
+        minus_dm = pd.Series(minus_dm_arr, index=data.index)
 
-        tr_smooth = pd.Series(true_range, index=data.index).ewm(alpha=1/14, adjust=False).mean()
-        tr_smooth_safe = np.where(tr_smooth == 0, 1e-8, tr_smooth)
-        plus_di = 100.0 * (pd.Series(plus_dm, index=data.index).ewm(alpha=1/14, adjust=False).mean() / tr_smooth_safe)
-        minus_di = 100.0 * (pd.Series(minus_dm, index=data.index).ewm(alpha=1/14, adjust=False).mean() / tr_smooth_safe)
-        dx_denom = np.where((plus_di + minus_di) == 0, 1e-8, plus_di + minus_di)
+        tr_smooth = true_range.ewm(alpha=1/14, adjust=False).mean()
+        tr_smooth_safe = tr_smooth.clip(lower=1e-8)
+        plus_di = 100.0 * (plus_dm.ewm(alpha=1/14, adjust=False).mean() / tr_smooth_safe)
+        minus_di = 100.0 * (minus_dm.ewm(alpha=1/14, adjust=False).mean() / tr_smooth_safe)
+        dx_denom = (plus_di + minus_di).clip(lower=1e-8)
         dx = 100.0 * ((plus_di - minus_di).abs() / dx_denom)
         feats["adx_14"] = dx.ewm(alpha=1/14, adjust=False).mean()
 
         # EMA slopes & distance ratios
-        feats["ema_slope_21"] = (feats["ema_21"] - feats["ema_21"].shift(5)) / np.where(feats["ema_21"].shift(5) == 0, 1e-8, feats["ema_21"].shift(5))
-        feats["price_vs_ema_21"] = (c - feats["ema_21"]) / np.where(feats["ema_21"] == 0, 1e-8, feats["ema_21"])
-        feats["price_vs_ema_50"] = (c - feats["ema_50"]) / np.where(feats["ema_50"] == 0, 1e-8, feats["ema_50"])
-        feats["price_vs_ema_200"] = (c - feats["ema_200"]) / np.where(feats["ema_200"] == 0, 1e-8, feats["ema_200"])
+        ema21_shift5_safe = feats["ema_21"].shift(5).replace(0, 1e-8)
+        feats["ema_slope_21"] = (feats["ema_21"] - feats["ema_21"].shift(5)) / ema21_shift5_safe
+        feats["price_vs_ema_21"] = (c - feats["ema_21"]) / feats["ema_21"].replace(0, 1e-8)
+        feats["price_vs_ema_50"] = (c - feats["ema_50"]) / feats["ema_50"].replace(0, 1e-8)
+        feats["price_vs_ema_200"] = (c - feats["ema_200"]) / feats["ema_200"].replace(0, 1e-8)
 
         feats["ma_cross_20_50"] = (feats["sma_20"] > feats["sma_50"]).astype(int)
         feats["ma_cross_50_200"] = (feats["sma_50"] > feats["sma_200"]).astype(int)
@@ -229,13 +233,12 @@ class FeatureEngine:
         # Group G: Volume
         # ------------------------------------------------------------------
         feats["volume_ma_20"] = v.rolling(window=20).mean()
-        v_ma_safe = np.where(feats["volume_ma_20"] == 0, 1e-8, feats["volume_ma_20"])
-        feats["volume_ratio_20"] = v / v_ma_safe
+        feats["volume_ratio_20"] = v / feats["volume_ma_20"].replace(0, 1e-8)
         feats["volume_change"] = v.pct_change()
 
         # On-Balance Volume (OBV)
-        obv_direction = np.where(c > c.shift(1), 1, np.where(c < c.shift(1), -1, 0))
-        obv_direction[0] = 0
+        price_diff = c.diff().fillna(0)
+        obv_direction = np.sign(price_diff.to_numpy())
         feats["obv"] = (v * obv_direction).cumsum()
 
         if dropna:

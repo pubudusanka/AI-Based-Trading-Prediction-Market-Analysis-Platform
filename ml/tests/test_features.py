@@ -86,9 +86,9 @@ def test_zero_lookahead_bias_leakage():
     # Clone df1 and alter the future data starting from index 60 onwards
     df2 = df1.copy()
     cutoff_idx = 60
-    df2.iloc[cutoff_idx:, df2.columns.get_loc("close")] *= 2.5
-    df2.iloc[cutoff_idx:, df2.columns.get_loc("high")] *= 3.0
-    df2.iloc[cutoff_idx:, df2.columns.get_loc("volume")] *= 10.0
+    df2.loc[df2.index[cutoff_idx:], "close"] *= 2.5
+    df2.loc[df2.index[cutoff_idx:], "high"] *= 3.0
+    df2.loc[df2.index[cutoff_idx:], "volume"] *= 10.0
 
     feats2 = FeatureEngine.compute_features(df2, dropna=False)
 
@@ -100,8 +100,8 @@ def test_zero_lookahead_bias_leakage():
         s1 = slice1[col].dropna()
         s2 = slice2[col].dropna()
         np.testing.assert_allclose(
-            s1.values,
-            s2.values,
+            np.asarray(s1.to_numpy(), dtype=float),
+            np.asarray(s2.to_numpy(), dtype=float),
             rtol=1e-5,
             err_msg=f"Look-ahead bias detected in feature: {col}!"
         )
