@@ -1,10 +1,13 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from datetime import datetime, timezone, timedelta
-import pytest
 from unittest.mock import MagicMock
-try:
-    from src.ingestion.collector import Candle, BinanceMarketDataClient
-except ModuleNotFoundError:
-    from ingestion.collector import Candle, BinanceMarketDataClient
+import pytest
+
+from src.ingestion.collector import Candle, BinanceMarketDataClient
+
 
 def test_candle_valid():
     now = datetime.now(timezone.utc)
@@ -26,6 +29,7 @@ def test_candle_valid():
     assert is_valid is True
     assert err is None
 
+
 def test_candle_invalid_high():
     now = datetime.now(timezone.utc)
     # High lower than close
@@ -45,7 +49,8 @@ def test_candle_invalid_high():
     )
     is_valid, err = c.validate()
     assert is_valid is False
-    assert "high" in err
+    assert err is not None and "high" in err
+
 
 def test_candle_invalid_low():
     now = datetime.now(timezone.utc)
@@ -66,7 +71,8 @@ def test_candle_invalid_low():
     )
     is_valid, err = c.validate()
     assert is_valid is False
-    assert "low" in err
+    assert err is not None and "low" in err
+
 
 def test_candle_invalid_volume():
     now = datetime.now(timezone.utc)
@@ -86,14 +92,13 @@ def test_candle_invalid_volume():
     )
     is_valid, err = c.validate()
     assert is_valid is False
-    assert "volume" in err
+    assert err is not None and "volume" in err
+
 
 def test_binance_client_mock_fetch():
     mock_session = MagicMock()
     mock_response = MagicMock()
     mock_response.status_code = 200
-    # Sample Binance kline row:
-    # [openTime, open, high, low, close, volume, closeTime, quoteVol, trades, ...]
     mock_response.json.return_value = [
         [1700000000000, "60000.0", "60500.0", "59800.0", "60200.0", "25.5", 1700000899999, "1530000.0", 300]
     ]

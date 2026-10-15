@@ -206,10 +206,8 @@ class FeatureEngine:
         # Directional Movement (+DM, -DM) and ADX(14)
         up_move = h - h.shift(1)
         down_move = l.shift(1) - l
-        plus_dm_arr = np.where((up_move.to_numpy() > down_move.to_numpy()) & (up_move.to_numpy() > 0), up_move.to_numpy(), 0.0)
-        minus_dm_arr = np.where((down_move.to_numpy() > up_move.to_numpy()) & (down_move.to_numpy() > 0), down_move.to_numpy(), 0.0)
-        plus_dm = pd.Series(plus_dm_arr, index=data.index)
-        minus_dm = pd.Series(minus_dm_arr, index=data.index)
+        plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0.0)
+        minus_dm = down_move.where((down_move > up_move) & (down_move > 0), 0.0)
 
         tr_smooth = true_range.ewm(alpha=1/14, adjust=False).mean()
         tr_smooth_safe = tr_smooth.clip(lower=1e-8)

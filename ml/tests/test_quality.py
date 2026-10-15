@@ -1,10 +1,12 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from datetime import datetime, timezone, timedelta
 import pandas as pd
 import pytest
-try:
-    from src.preprocessing.quality import DataQualityAuditor
-except ModuleNotFoundError:
-    from preprocessing.quality import DataQualityAuditor
+
+from src.preprocessing.quality import DataQualityAuditor
 
 def create_sample_df(count: int = 10, interval_mins: int = 15, drop_indices = None):
     base_time = datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc)

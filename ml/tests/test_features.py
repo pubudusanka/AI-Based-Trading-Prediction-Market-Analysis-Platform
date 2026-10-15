@@ -1,12 +1,13 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from datetime import datetime, timezone, timedelta
 import numpy as np
 import pandas as pd
 import pytest
 
-try:
-    from src.features.engine import FeatureEngine, FEATURE_CATALOG_V1
-except ModuleNotFoundError:
-    from features.engine import FeatureEngine, FEATURE_CATALOG_V1
+from src.features.engine import FeatureEngine, FEATURE_CATALOG_V1
 
 
 def create_mock_ohlcv(n: int = 250) -> pd.DataFrame:
