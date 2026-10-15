@@ -164,8 +164,8 @@ class BinanceMarketDataClient:
         self,
         symbol: str = "BTCUSDT",
         interval: str = "15m",
-        start_dt: datetime = None,
-        end_dt: datetime = None,
+        start_dt: Optional[datetime] = None,
+        end_dt: Optional[datetime] = None,
         batch_delay_sec: float = 0.2
     ) -> List[Candle]:
         """

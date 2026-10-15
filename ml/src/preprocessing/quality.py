@@ -164,8 +164,14 @@ class DataQualityAuditor:
 
         data.sort_index(inplace=True)
 
-        start_date = data.index[0].to_pydatetime()
-        end_date = data.index[-1].to_pydatetime()
+        def _to_dt(val: Any) -> datetime:
+            dt = pd.Timestamp(str(val)).to_pydatetime()
+            if isinstance(dt, datetime):
+                return dt
+            raise ValueError(f"Invalid timestamp value: {val}")
+
+        start_date: datetime = _to_dt(data.index[0])
+        end_date: datetime = _to_dt(data.index[-1])
         total_candles = len(data)
 
         # 3. Timeframe continuous interval checking
@@ -174,34 +180,41 @@ class DataQualityAuditor:
         expected_candles = int(total_duration / interval_delta) + 1 if total_duration.total_seconds() >= 0 else 1
 
         # Find timestamp gaps
-        time_diffs = data.index.to_series().diff()
+        time_series = pd.Series(pd.to_datetime(data.index), index=data.index)
+        time_diffs = time_series.diff()
         expected_sec = interval_delta.total_seconds()
         gap_mask = time_diffs > (interval_delta + timedelta(seconds=1))
 
         gaps: List[TimestampGap] = []
         missing_candles_count = 0
 
-        for gap_time, diff in time_diffs[gap_mask].items():
-            gap_seconds = diff.total_seconds()
+        filtered_diffs = pd.Series(time_diffs[gap_mask])
+        for gap_time, diff in filtered_diffs.items():
+            gap_seconds = pd.Timedelta(diff).total_seconds()
             missing_in_gap = int(gap_seconds // expected_sec) - 1
             if missing_in_gap > 0:
-                expected_prev = gap_time - diff + interval_delta
+                expected_prev = pd.Timestamp(str(gap_time)) - pd.Timedelta(diff) + interval_delta
                 missing_candles_count += missing_in_gap
                 gaps.append(TimestampGap(
-                    expected_time=expected_prev.to_pydatetime(),
-                    actual_next_time=gap_time.to_pydatetime(),
+                    expected_time=_to_dt(expected_prev),
+                    actual_next_time=_to_dt(gap_time),
                     gap_duration_minutes=gap_seconds / 60.0,
                     missing_candle_count=missing_in_gap
                 ))
 
         # 4. Check OHLC validity
         # high >= max(open, close), low <= min(open, close), high >= low
-        max_oc = np.maximum(data["open"].values, data["close"].values)
-        min_oc = np.minimum(data["open"].values, data["close"].values)
-        
-        invalid_high = data["high"].values < max_oc
-        invalid_low = data["low"].values > min_oc
-        invalid_hl = data["high"].values < data["low"].values
+        o = pd.Series(data["open"], dtype=float)
+        h = pd.Series(data["high"], dtype=float)
+        l = pd.Series(data["low"], dtype=float)
+        c = pd.Series(data["close"], dtype=float)
+
+        max_oc = o.where(o >= c, c)
+        min_oc = o.where(o <= c, c)
+
+        invalid_high = h < max_oc
+        invalid_low = l > min_oc
+        invalid_hl = h < l
         invalid_ohlc_mask = invalid_high | invalid_low | invalid_hl
         invalid_ohlc_count = int(invalid_ohlc_mask.sum())
 

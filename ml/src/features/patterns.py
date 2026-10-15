@@ -53,9 +53,10 @@ class CandlestickPatternEngine:
         body_size = (c - o).abs()
         candle_range = (h - l).clip(lower=1e-8)
         body_ratio = body_size / candle_range
-
-        upper_wick = h - np.maximum(o.to_numpy(), c.to_numpy())
-        lower_wick = np.minimum(o.to_numpy(), c.to_numpy()) - l
+        body_top = o.where(o >= c, c)
+        body_bottom = o.where(o <= c, c)
+        upper_wick = h - body_top
+        lower_wick = body_bottom - l
 
         is_bullish = c > o
         is_bearish = c < o
@@ -152,13 +153,13 @@ class CandlestickPatternEngine:
         # ------------------------------------------------------------------
         # 10. Harami: Current body completely inside previous body
         # ------------------------------------------------------------------
-        body_max_curr = np.maximum(o.to_numpy(), c.to_numpy())
-        body_min_curr = np.minimum(o.to_numpy(), c.to_numpy())
-        body_max_prev = np.maximum(o_prev.to_numpy(), c_prev.to_numpy())
-        body_min_prev = np.minimum(o_prev.to_numpy(), c_prev.to_numpy())
+        body_max_curr = body_top
+        body_min_curr = body_bottom
+        body_max_prev = o_prev.where(o_prev >= c_prev, c_prev)
+        body_min_prev = o_prev.where(o_prev <= c_prev, c_prev)
 
         harami_mask = (body_max_curr <= body_max_prev) & (body_min_curr >= body_min_prev) & (body_size < body_prev1)
-        patterns["pattern_harami"] = pd.Series(harami_mask, index=data.index).fillna(False).astype(int)
+        patterns["pattern_harami"] = harami_mask.fillna(False).astype(int)
 
         # ------------------------------------------------------------------
         # 11. Inside Bar: Current high <= previous high and current low >= previous low
