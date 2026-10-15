@@ -158,7 +158,7 @@ class DataQualityAuditor:
             data.index = data.index.tz_convert("UTC")
 
         # 2. Check duplicates
-        duplicate_count = int(data.index.duplicated().sum())
+        duplicate_count = data.index.duplicated().sum().item()
         if duplicate_count > 0:
             data = data[~data.index.duplicated(keep="first")]
 
@@ -216,28 +216,29 @@ class DataQualityAuditor:
         invalid_low = l > min_oc
         invalid_hl = h < l
         invalid_ohlc_mask = invalid_high | invalid_low | invalid_hl
-        invalid_ohlc_count = int(invalid_ohlc_mask.sum())
+        invalid_ohlc_count = invalid_ohlc_mask.sum().item()
 
         # 5. Non-positive prices (<= 0)
-        zero_neg_mask = (data["open"] <= 0) | (data["high"] <= 0) | (data["low"] <= 0) | (data["close"] <= 0)
-        zero_or_negative_price_count = int(zero_neg_mask.sum())
+        zero_neg_mask = (o <= 0) | (h <= 0) | (l <= 0) | (c <= 0)
+        zero_or_negative_price_count = zero_neg_mask.sum().item()
 
         # 6. Volume checks (volume < 0 or extreme outlier > 8 std)
-        negative_vol = data["volume"] < 0
-        vol_mean = data["volume"].mean()
-        vol_std = data["volume"].std()
-        outlier_vol = data["volume"] > (vol_mean + self.volume_outlier_std * vol_std) if vol_std > 0 else pd.Series(False, index=data.index)
-        abnormal_volume_count = int((negative_vol | outlier_vol).sum())
+        v = pd.Series(data["volume"], dtype=float)
+        negative_vol = v < 0
+        vol_mean = v.mean()
+        vol_std = v.std()
+        outlier_vol = v > (vol_mean + self.volume_outlier_std * vol_std) if vol_std > 0 else pd.Series(False, index=data.index)
+        abnormal_volume_count = (negative_vol | outlier_vol).sum().item()
 
         coverage = (total_candles / expected_candles * 100.0) if expected_candles > 0 else 100.0
         coverage = min(coverage, 100.0)
 
-        is_clean = bool(
+        is_clean = (
             missing_candles_count == 0
             and duplicate_count == 0
             and invalid_ohlc_count == 0
             and zero_or_negative_price_count == 0
-            and (negative_vol.sum() == 0)
+            and (negative_vol.sum().item() == 0)
         )
 
         return DataQualityReport(
