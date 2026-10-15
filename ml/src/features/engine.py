@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 import numpy as np
 import pandas as pd
+from src.features.patterns import CandlestickPatternEngine
 
 
 @dataclass(frozen=True)
@@ -99,7 +100,7 @@ class FeatureEngine:
     VERSION = "v1.0.0"
 
     @classmethod
-    def compute_features(cls, df: pd.DataFrame, dropna: bool = False) -> pd.DataFrame:
+    def compute_features(cls, df: pd.DataFrame, dropna: bool = False, include_patterns: bool = True) -> pd.DataFrame:
         if df.empty or len(df) < 2:
             return pd.DataFrame()
 
@@ -238,6 +239,14 @@ class FeatureEngine:
         price_diff = c.diff().fillna(0)
         obv_direction = np.sign(price_diff.to_numpy())
         feats["obv"] = (v * obv_direction).cumsum()
+
+        # ------------------------------------------------------------------
+        # Group H: Candlestick Patterns (Phase 7 Integration)
+        # ------------------------------------------------------------------
+        if include_patterns:
+            pattern_df = CandlestickPatternEngine.detect_patterns(data)
+            for col in pattern_df.columns:
+                feats[col] = pattern_df[col]
 
         if dropna:
             feats.dropna(inplace=True)
