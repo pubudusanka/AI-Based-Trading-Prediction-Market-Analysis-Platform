@@ -69,4 +69,25 @@
 | `is_breakout_low` | Breakout | 1 if candle close < previous candle's active support | 1 | close, low | `int` | Compared against prior candle's support |
 | `is_break_of_structure` | Structure | +1 for Bullish BOS, -1 for Bearish BOS, 0 otherwise | 1 | close, high, low | `int` | Causal break of structure detection |
 | `is_retest_support` | Retest | 1 if price pulls back to broken resistance ($\pm 0.3\%$) and holds | $\le 10$ bars | close, low | `int` | Post-breakout causal tracking |
-| `is_retest_resistance` | Retest | 1 if price rallies to broken support ($\pm 0.3\%$) and rejects | $\le 10$ bars | close, high | `int` | Post-breakdown causal tracking |
+| `is_retest_resistance` | Retest | 1 if price rallies to broken support ($\pm 0.3\%$) and rejects | $\le 10$ bars | close, high | `int` | Post-breakdown causal tracking |
+
+## Fibonacci Retracement Features (Phase 9)
+
+| Feature Name | Group | Formula / Definition | Lookback / Anchor | Inputs | Output Type | Leakage Prevention Invariant |
+|---|---|---|---|---|---|---|
+| `fib_level_236` | Fibonacci | Retracement level at $0.236$ ratio | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `fib_level_382` | Fibonacci | Retracement level at $0.382$ ratio | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `fib_level_500` | Fibonacci | Midpoint equilibrium level at $0.500$ ratio | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `fib_level_618` | Fibonacci | Golden pocket level at $0.618$ ratio | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `fib_level_786` | Fibonacci | Deep retracement level at $0.786$ ratio | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `fib_level_1000` | Fibonacci | Full retracement boundary (1.000) | Active confirmed swings | high, low | `float` | Dynamically anchored to past swings |
+| `distance_to_236` | Fibonacci | `(close - fib_level_236) / close` | 1 | close, fib_level_236 | `float` | Signed normalized distance |
+| `distance_to_382` | Fibonacci | `(close - fib_level_382) / close` | 1 | close, fib_level_382 | `float` | Signed normalized distance |
+| `distance_to_500` | Fibonacci | `(close - fib_level_500) / close` | 1 | close, fib_level_500 | `float` | Signed normalized distance |
+| `distance_to_618` | Fibonacci | `(close - fib_level_618) / close` | 1 | close, fib_level_618 | `float` | Signed normalized distance |
+| `distance_to_786` | Fibonacci | `(close - fib_level_786) / close` | 1 | close, fib_level_786 | `float` | Signed normalized distance |
+| `near_618` | Fibonacci | 1 if `|distance_to_618| <= 0.003` (0.3%) else 0 | 1 | close, fib_level_618 | `int` | Binary golden zone proximity flag |
+| `near_382` | Fibonacci | 1 if `|distance_to_382| <= 0.003` (0.3%) else 0 | 1 | close, fib_level_382 | `int` | Binary shallow retracement proximity flag |
+| `fib_swing_range` | Fibonacci | `active_swing_high_price - active_swing_low_price` | Dynamic | high, low | `float` | Active structural swing span |
+| `fib_impulse_direction`| Fibonacci | +1 for Low->High impulse, -1 for High->Low impulse | Dynamic | swing timestamps | `int` | Direction of originating move |
+
