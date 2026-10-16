@@ -47,3 +47,26 @@
 | `volume_ratio_20` | Volume | `volume / volume_ma_20` | 20 | volume | `float` | 1.0 default if 0 | Zero: strictly backwards-looking (<= T) |
 | `volume_change` | Volume | `(V_t - V_{t-1}) / V_{t-1}` | 1 | volume | `float` | NaN for first row | Zero: strictly backwards-looking (<= T) |
 | `obv` | Volume | `Cumulative On-Balance Volume` | 1 | close, volume | `float` | Continuous cumulative | Zero: strictly backwards-looking (<= T) |
+
+## Market Structure Features (Phase 8)
+
+| Feature Name | Group | Formula / Definition | Lookback / Confirmation | Inputs | Output Type | Leakage Prevention Invariant |
+|---|---|---|---|---|---|---|
+| `is_swing_high` | Structure | 1 if peak confirmed at candle $t$ (which occurred at $t - K$) | $K$ confirmation bars | high | `int` | Confirmed strictly at $t \ge t_{\text{peak}} + K$ |
+| `is_swing_low` | Structure | 1 if trough confirmed at candle $t$ (which occurred at $t - K$) | $K$ confirmation bars | low | `int` | Confirmed strictly at $t \ge t_{\text{trough}} + K$ |
+| `active_swing_high_price` | Structure | Price level of most recent confirmed swing high | Dynamic | high | `float` | Level known at or before current candle $t$ |
+| `active_swing_low_price` | Structure | Price level of most recent confirmed swing low | Dynamic | low | `float` | Level known at or before current candle $t$ |
+| `is_higher_high` | Structure | 1 if newly confirmed swing high > prior confirmed swing high | $2 \times \text{swings}$ | high | `int` | Evaluated strictly on confirmed peaks |
+| `is_lower_high` | Structure | 1 if newly confirmed swing high < prior confirmed swing high | $2 \times \text{swings}$ | high | `int` | Evaluated strictly on confirmed peaks |
+| `is_higher_low` | Structure | 1 if newly confirmed swing low > prior confirmed swing low | $2 \times \text{swings}$ | low | `int` | Evaluated strictly on confirmed troughs |
+| `is_lower_low` | Structure | 1 if newly confirmed swing low < prior confirmed swing low | $2 \times \text{swings}$ | low | `int` | Evaluated strictly on confirmed troughs |
+| `trend_direction` | Structure | +1 for Uptrend (HH/HL), -1 for Downtrend (LH/LL), 0 Sideways | Dynamic | high, low | `int` | State changes only when swing confirmed |
+| `support_price` | Support/Res | Current active support level (most recent confirmed swing low) | Dynamic | low | `float` | Only confirmed levels used |
+| `resistance_price` | Support/Res | Current active resistance level (most recent confirmed swing high) | Dynamic | high | `float` | Only confirmed levels used |
+| `dist_to_support` | Support/Res | `(close - support_price) / close` | Dynamic | close, low | `float` | Normalized distance |
+| `dist_to_resistance` | Support/Res | `(resistance_price - close) / close` | Dynamic | close, high | `float` | Normalized distance |
+| `is_breakout_high` | Breakout | 1 if candle close > previous candle's active resistance | 1 | close, high | `int` | Compared against prior candle's resistance |
+| `is_breakout_low` | Breakout | 1 if candle close < previous candle's active support | 1 | close, low | `int` | Compared against prior candle's support |
+| `is_break_of_structure` | Structure | +1 for Bullish BOS, -1 for Bearish BOS, 0 otherwise | 1 | close, high, low | `int` | Causal break of structure detection |
+| `is_retest_support` | Retest | 1 if price pulls back to broken resistance ($\pm 0.3\%$) and holds | $\le 10$ bars | close, low | `int` | Post-breakout causal tracking |
+| `is_retest_resistance` | Retest | 1 if price rallies to broken support ($\pm 0.3\%$) and rejects | $\le 10$ bars | close, high | `int` | Post-breakdown causal tracking |
