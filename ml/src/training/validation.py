@@ -200,8 +200,8 @@ class WalkForwardValidator:
         total_trades = 0
 
         for fold_idx, (train_idx, test_idx) in enumerate(self.cv.split(df), 1):
-            train_sub = pd.DataFrame(df.iloc[train_idx])
-            test_sub = pd.DataFrame(df.iloc[test_idx])
+            train_sub = pd.DataFrame(df.iloc[cast(Any, train_idx)])
+            test_sub = pd.DataFrame(df.iloc[cast(Any, test_idx)])
 
             # Refit model cleanly on this fold's training slice
             model.fit(train_sub, target_col=self.target_col, valid_col=self.valid_col)
