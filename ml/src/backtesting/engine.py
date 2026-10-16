@@ -319,7 +319,7 @@ class BacktestEngine:
                             slippage_cost=float(round(slippage_cost, 2)),
                             net_pnl=float(round(net_pnl, 2)),
                             net_return_pct=float(round(net_ret, 2)),
-                            holding_candles=int(max(1, holding_duration)),
+                            holding_candles=max(1, holding_duration),
                             is_winner=bool(net_pnl > 0),
                         )
                     )

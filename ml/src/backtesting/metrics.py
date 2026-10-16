@@ -164,18 +164,23 @@ class MetricsCalculator:
                 curr_dd_duration = 0
 
         # Sharpe and Sortino (based on candle returns)
-        candle_returns = equity_series.pct_change().dropna().to_numpy()
-        if len(candle_returns) > 1 and np.std(candle_returns) > 1e-9:
+        candle_returns = np.asarray(equity_series.pct_change().dropna(), dtype=np.float64)
+        c_std = float(np.std(candle_returns)) if len(candle_returns) > 1 else 0.0
+
+        if len(candle_returns) > 1 and c_std > 1e-9:
             rf_per_candle = cls.RISK_FREE_RATE_ANNUAL / cpy
-            excess_returns = candle_returns - rf_per_candle
-            mean_excess = np.mean(excess_returns)
-            std_returns = np.std(candle_returns)
+            excess_returns = np.asarray(candle_returns - rf_per_candle, dtype=np.float64)
+            mean_excess = float(np.mean(excess_returns))
+            std_returns = c_std
 
             sharpe_ratio = float((mean_excess / std_returns) * np.sqrt(cpy))
 
-            downside_returns = candle_returns[candle_returns < 0]
-            if len(downside_returns) > 0 and np.std(downside_returns) > 1e-9:
-                downside_std = float(np.sqrt(np.mean(downside_returns ** 2)))
+            downside_returns = np.asarray(candle_returns[candle_returns < 0], dtype=np.float64)
+            d_std = float(np.std(downside_returns)) if len(downside_returns) > 0 else 0.0
+
+            if len(downside_returns) > 0 and d_std > 1e-9:
+                downside_sq = np.asarray(downside_returns ** 2, dtype=np.float64)
+                downside_std = float(np.sqrt(np.mean(downside_sq)))
                 sortino_ratio = float((mean_excess / downside_std) * np.sqrt(cpy))
             else:
                 sortino_ratio = sharpe_ratio
