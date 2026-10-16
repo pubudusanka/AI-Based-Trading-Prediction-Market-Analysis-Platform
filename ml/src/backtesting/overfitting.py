@@ -19,7 +19,7 @@ import os
 from typing import Dict, Any, List, Optional, Tuple, cast
 import numpy as np
 import pandas as pd
-from scipy.stats import norm, skew, kurtosis
+from scipy.stats import norm, skew, kurtosis  # type: ignore[import-untyped]
 
 from src.backtesting.engine import BacktestEngine, BacktestResult
 from src.backtesting.sizing import PositionSizer, PercentCapitalSizer
