@@ -154,14 +154,15 @@ class ProbabilityCalibrator:
             raise ValueError(f"Insufficient samples to fit calibrator: {len(y_t)}")
 
         # One-hot encode targets
-        y_bin = label_binarize(y_t, classes=self.CLASS_LABELS)
+        y_bin = np.asarray(label_binarize(y_t, classes=self.CLASS_LABELS), dtype=np.float64)
 
         for col_idx, cls_label in enumerate(self.CLASS_LABELS):
-            prob_col = y_p[:, col_idx]
-            target_binary = y_bin[:, col_idx]
+            prob_col = np.asarray(y_p[:, col_idx], dtype=np.float64)
+            target_binary = np.asarray(y_bin[:, col_idx], dtype=np.float64)
 
             # If a class has zero positive instances, skip or fit dummy
-            if np.sum(target_binary) == 0 or np.sum(target_binary) == len(target_binary):
+            target_sum = float(np.sum(target_binary))
+            if target_sum == 0.0 or target_sum == float(len(target_binary)):
                 continue
 
             if self.method == "sigmoid":
@@ -378,7 +379,7 @@ class CalibratedTradingModel:
         cal_prob_df = self.predict_proba(sub_df)
         cal_probs = np.asarray(cal_prob_df, dtype=np.float64)
 
-        y_bin = label_binarize(y_true_clean, classes=self.CLASS_LABELS)
+        y_bin = np.asarray(label_binarize(y_true_clean, classes=self.CLASS_LABELS), dtype=np.float64)
 
         # Calculate Brier Scores
         brier_uncal = float(np.mean(np.sum((raw_probs - y_bin) ** 2, axis=1)))
@@ -390,10 +391,10 @@ class CalibratedTradingModel:
 
         for col_idx, cls_name in enumerate(self.CLASS_NAMES):
             cls_val = self.CLASS_LABELS[col_idx]
-            y_bin_col = y_bin[:, col_idx]
+            y_bin_col = np.asarray(y_bin[:, col_idx], dtype=np.float64)
 
-            raw_col = raw_probs[:, col_idx]
-            cal_col = cal_probs[:, col_idx]
+            raw_col = np.asarray(raw_probs[:, col_idx], dtype=np.float64)
+            cal_col = np.asarray(cal_probs[:, col_idx], dtype=np.float64)
 
             # Uncalibrated ECE
             u_ece, _, _ = ProbabilityCalibrator.compute_reliability_curve(raw_col, y_bin_col, n_bins=self.calibrator.n_bins)

@@ -175,7 +175,7 @@ class ModelRegistry:
         artifact_hash = self.compute_sha256(artifact_path)
 
         # 3. Determine status string
-        status_str = status.value if isinstance(status, ModelStatus) else str(status).upper()
+        status_str = status.value if isinstance(status, ModelStatus) else status.upper()
         if status_str not in [s.value for s in ModelStatus]:
             raise ValueError(f"Invalid status '{status_str}'. Must be one of {[s.value for s in ModelStatus]}")
 
@@ -277,7 +277,7 @@ class ModelRegistry:
             metadata_dict = json.load(f)
         metadata = ModelMetadata.from_dict(metadata_dict)
 
-        target_status = new_status.value if isinstance(new_status, ModelStatus) else str(new_status).upper()
+        target_status = new_status.value if isinstance(new_status, ModelStatus) else new_status.upper()
         if target_status not in [s.value for s in ModelStatus]:
             raise ValueError(f"Invalid status '{target_status}'. Must be one of {[s.value for s in ModelStatus]}")
 

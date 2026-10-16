@@ -303,7 +303,7 @@ class FeatureImportanceEngine:
             for _ in range(n_repeats):
                 shuffled_df = sub_df.copy()
                 shuffled_vals = rng.permutation(shuffled_df[feat].to_numpy())
-                shuffled_df[feat] = shuffled_vals
+                shuffled_df[feat] = pd.Series(shuffled_vals, index=shuffled_df.index)
 
                 shuffled_preds = np.asarray(model.predict(shuffled_df), dtype=np.float64)
                 shuffled_score = float(balanced_accuracy_score(y_true, shuffled_preds))
