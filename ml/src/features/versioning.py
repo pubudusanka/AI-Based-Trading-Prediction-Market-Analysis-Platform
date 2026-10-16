@@ -243,7 +243,7 @@ class DatasetManager:
             start_date=str(combined.index[0]),
             end_date=str(combined.index[-1]),
             total_rows=len(combined),
-            valid_rows=int(total_valid),
+            valid_rows=total_valid,
             raw_data_hash=raw_hash,
             dataset_hash=dataset_hash,
             class_balance=counts,

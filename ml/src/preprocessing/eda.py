@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
-from scipy import stats
+from scipy import stats  # type: ignore
 
 
 @dataclass
@@ -223,7 +223,7 @@ class EDAAnalyzer:
             target_series = pd.Series(valid_df[target_col])
             counts = target_series.value_counts().to_dict()
             for cls_name in ["UP", "DOWN", "NEUTRAL"]:
-                c = int(counts.get(cls_name, 0))
+                c = counts.get(cls_name, 0)
                 p = (c / n_valid * 100.0) if n_valid > 0 else 0.0
                 class_dist[cls_name] = {"count": c, "pct": p}
 
@@ -234,7 +234,7 @@ class EDAAnalyzer:
         # 2. Missing Values Analysis
         missing_dict: Dict[str, int] = {}
         for c in df.columns:
-            cnt = int(pd.Series(df[c]).isna().sum())
+            cnt = pd.Series(df[c]).isna().sum()
             if cnt > 0:
                 missing_dict[c] = cnt
 
@@ -246,8 +246,8 @@ class EDAAnalyzer:
 
         zero_var_features: List[str] = []
         for c in numeric_cols:
-            s_arr = pd.Series(df[c], dtype=float).dropna().to_numpy(dtype=float)
-            if len(s_arr) > 1 and float(np.std(s_arr)) == 0.0:
+            s_arr = np.asarray(pd.Series(df[c], dtype=float).dropna(), dtype=np.float64)
+            if len(s_arr) > 1 and float(s_arr.std()) == 0.0:
                 zero_var_features.append(c)
 
         # 4. Multicollinearity (|r| >= 0.85)
@@ -255,13 +255,14 @@ class EDAAnalyzer:
         if len(numeric_cols) > 1 and len(df) >= 10:
             num_df = pd.DataFrame(df[numeric_cols])
             corr_df = pd.DataFrame(num_df.corr(min_periods=10))
-            corr_abs = pd.DataFrame(corr_df.abs())
+            corr_abs_mat = np.asarray(corr_df.abs(), dtype=np.float64)
+            corr_df_mat = np.asarray(corr_df, dtype=np.float64)
             cols = list(corr_df.columns)
             for i in range(len(cols)):
                 for j in range(i + 1, len(cols)):
-                    val = float(corr_abs.iloc[i, j])
+                    val = float(corr_abs_mat[i, j])
                     if val >= 0.85 and not np.isnan(val):
-                        r_signed = float(corr_df.iloc[i, j])
+                        r_signed = float(corr_df_mat[i, j])
                         high_corr_pairs.append({
                             "feature_1": cols[i],
                             "feature_2": cols[j],
