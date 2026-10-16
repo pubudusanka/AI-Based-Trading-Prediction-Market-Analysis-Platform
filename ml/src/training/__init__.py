@@ -25,6 +25,13 @@ from src.training.validation import (
     WalkForwardValidationReport,
     WalkForwardValidator,
 )
+from src.training.registry import (
+    ModelRegistry,
+    ModelMetadata,
+    ModelStatus,
+    ModelIntegrityError,
+    PromotionEvent,
+)
 
 __all__ = [
     "BaselineStrategy",
@@ -44,4 +51,9 @@ __all__ = [
     "WalkForwardFoldResult",
     "WalkForwardValidationReport",
     "WalkForwardValidator",
+    "ModelRegistry",
+    "ModelMetadata",
+    "ModelStatus",
+    "ModelIntegrityError",
+    "PromotionEvent",
 ]
