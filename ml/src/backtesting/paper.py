@@ -24,6 +24,7 @@ import pandas as pd
 
 from src.backtesting.sizing import PositionSizer, PercentCapitalSizer
 from src.backtesting.metrics import BacktestMetrics
+from src.risk.manager import RiskManager
 
 
 @dataclass
@@ -108,6 +109,7 @@ class PaperTradingEngine:
         stop_loss_pct: float = 0.005,
         max_holding_candles: int = 20,
         min_confidence: float = 0.40,
+        risk_manager: Optional[RiskManager] = None,
     ):
         self.model = model
         self.model_version = model_version
@@ -122,6 +124,7 @@ class PaperTradingEngine:
         self.stop_loss_pct = stop_loss_pct
         self.max_holding_candles = max_holding_candles
         self.min_confidence = min_confidence
+        self.risk_manager = risk_manager
 
         self.active_position: Optional[VirtualPosition] = None
         self.trade_history: List[VirtualTradeRecord] = []
@@ -249,6 +252,8 @@ class PaperTradingEngine:
                     outcome=outcome,
                 )
                 self.trade_history.append(completed_trade)
+                if self.risk_manager is not None:
+                    self.risk_manager.on_trade_closed(completed_trade.net_pnl, completed_trade.exit_time)
 
                 self.active_position = None
                 self._active_trade_meta = None
@@ -269,49 +274,71 @@ class PaperTradingEngine:
                 sl_barrier = fill_entry_price * (1.0 - self.stop_loss_pct)
                 tp_barrier = fill_entry_price * (1.0 + self.take_profit_pct)
 
-                qty = self.sizer.calculate_order_quantity(
-                    current_equity=self.cash,
-                    current_price=fill_entry_price,
-                    stop_loss_price=sl_barrier,
-                    probability=p_up,
-                )
-
-                pos_val = qty * fill_entry_price
-                entry_fee = pos_val * self.fee_pct
-
-                if pos_val + entry_fee <= self.cash and qty > 0:
-                    self.cash -= (pos_val + entry_fee)
-
-                    buy_order = VirtualOrder(
-                        order_id=f"ORD_{len(self.order_history)+1:05d}",
+                risk_approved = True
+                if self.risk_manager is not None:
+                    atr_val = float(c_dict["atr_14"]) if ("atr_14" in c_dict and pd.notna(c_dict["atr_14"])) else None
+                    assessment = self.risk_manager.evaluate_trade(
                         symbol=self.symbol,
-                        side="BUY",
-                        order_type="MARKET",
-                        quantity=qty,
-                        price=fill_entry_price,
+                        entry_price=fill_entry_price,
+                        stop_loss=sl_barrier,
+                        take_profit=tp_barrier,
+                        is_long=True,
+                        atr=atr_val,
                         timestamp=time_str,
                     )
-                    self.order_history.append(buy_order)
+                    if not assessment.approved:
+                        risk_approved = False
+                    else:
+                        sl_barrier = assessment.stop_loss
+                        tp_barrier = assessment.take_profit
 
-                    self.active_position = VirtualPosition(
-                        position_id=f"POS_{len(self.trade_history)+1:05d}",
-                        symbol=self.symbol,
-                        quantity=qty,
-                        entry_price=float(round(fill_entry_price, 4)),
-                        current_price=float(round(c_close, 4)),
-                        take_profit_price=float(round(tp_barrier, 4)),
-                        stop_loss_price=float(round(sl_barrier, 4)),
-                        unrealized_pnl=0.0,
-                        unrealized_pnl_pct=0.0,
-                        entry_time=time_str,
-                        entry_fee=float(round(entry_fee, 2)),
+                if risk_approved:
+                    qty = self.sizer.calculate_order_quantity(
+                        current_equity=self.cash,
+                        current_price=fill_entry_price,
+                        stop_loss_price=sl_barrier,
+                        probability=p_up,
                     )
 
-                    self._active_trade_meta = {
-                        "signal_time": time_str,
-                        "probability": p_up,
-                    }
-                    self._holding_candles = 0
+                    pos_val = qty * fill_entry_price
+                    entry_fee = pos_val * self.fee_pct
+
+                    if pos_val + entry_fee <= self.cash and qty > 0:
+                        self.cash -= (pos_val + entry_fee)
+
+                        buy_order = VirtualOrder(
+                            order_id=f"ORD_{len(self.order_history)+1:05d}",
+                            symbol=self.symbol,
+                            side="BUY",
+                            order_type="MARKET",
+                            quantity=qty,
+                            price=fill_entry_price,
+                            timestamp=time_str,
+                        )
+                        self.order_history.append(buy_order)
+
+                        if self.risk_manager is not None:
+                            self.risk_manager.on_trade_opened()
+
+                        self.active_position = VirtualPosition(
+                            position_id=f"POS_{len(self.trade_history)+1:05d}",
+                            symbol=self.symbol,
+                            quantity=qty,
+                            entry_price=float(round(fill_entry_price, 4)),
+                            current_price=float(round(c_close, 4)),
+                            take_profit_price=float(round(tp_barrier, 4)),
+                            stop_loss_price=float(round(sl_barrier, 4)),
+                            unrealized_pnl=0.0,
+                            unrealized_pnl_pct=0.0,
+                            entry_time=time_str,
+                            entry_fee=float(round(entry_fee, 2)),
+                        )
+
+                        self._active_trade_meta = {
+                            "signal_time": time_str,
+                            "probability": p_up,
+                        }
+                        self._holding_candles = 0
 
         # Record equity point
         self.equity_log.append({
@@ -320,6 +347,9 @@ class PaperTradingEngine:
             "equity": round(self.total_equity, 2),
             "in_position": self.active_position is not None,
         })
+
+        if self.risk_manager is not None:
+            self.risk_manager.on_candle_close()
 
         return completed_trade
 
@@ -332,7 +362,7 @@ class PaperTradingEngine:
         total_net_pnl = sum(t.net_pnl for t in self.trade_history)
         win_rate = (len(wins) / total_trades * 100.0) if total_trades > 0 else 0.0
 
-        return {
+        summary: Dict[str, Any] = {
             "model_version": self.model_version,
             "symbol": self.symbol,
             "timeframe": self.timeframe,
@@ -346,6 +376,9 @@ class PaperTradingEngine:
             "win_rate_pct": round(win_rate, 2),
             "active_position": self.active_position.to_dict() if self.active_position else None,
         }
+        if self.risk_manager is not None:
+            summary["risk_status"] = self.risk_manager.get_status()
+        return summary
 
     def compare_with_backtest(self, backtest_metrics: BacktestMetrics) -> Dict[str, Any]:
         """
