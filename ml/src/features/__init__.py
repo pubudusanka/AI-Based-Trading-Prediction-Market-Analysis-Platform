@@ -6,6 +6,12 @@ from .structure import MarketStructureEngine
 from .fibonacci import FibonacciEngine
 from .dataset import FeatureDataset, FeatureDatasetBuilder, FeatureDatasetMetadata
 from .labels import LabelEngine
+from .versioning import (
+    DatasetManager,
+    DatasetVersion,
+    DatasetVersionMetadata,
+    DatasetSplits,
+)
 
 __all__ = [
     "FeatureEngine",
@@ -16,6 +22,10 @@ __all__ = [
     "FeatureDatasetBuilder",
     "FeatureDatasetMetadata",
     "LabelEngine",
+    "DatasetManager",
+    "DatasetVersion",
+    "DatasetVersionMetadata",
+    "DatasetSplits",
 ]
 
 
