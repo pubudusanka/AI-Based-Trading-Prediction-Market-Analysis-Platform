@@ -99,10 +99,6 @@ class MLFeaturePipeline(BaseEstimator, TransformerMixin):
         scaled_vals = self.scaler.transform(imputed_vals)
         return np.asarray(scaled_vals, dtype=np.float64)
 
-    def fit_transform(self, X: pd.DataFrame, y: Optional[Any] = None, **fit_params: Any) -> np.ndarray:
-        """Fits on training data and transforms in one atomic step."""
-        return self.fit(X, y).transform(X)
-
     def save(self, filepath: str) -> str:
         """Persists fitted pipeline to disk."""
         import os
