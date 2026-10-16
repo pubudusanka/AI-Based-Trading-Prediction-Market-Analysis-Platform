@@ -168,3 +168,6 @@ class CandlestickPatternEngine:
         patterns["pattern_inside_bar"] = inside_bar_mask.fillna(False).astype(int)
 
         return patterns
+
+    # Alias for convenience
+    detect = detect_patterns
