@@ -12,6 +12,15 @@ from src.evaluation.calibration import (
     ReliabilityBin,
 )
 
+from src.evaluation.explainability import (
+    FeatureImportanceEngine,
+    FeatureImportanceItem,
+    PredictionFactorExplanation,
+    SinglePredictionExplanation,
+    FeatureImportanceReport,
+    CAUSALITY_DISCLAIMER,
+)
+
 __all__ = [
     "ModelEvaluator",
     "ModelEvaluationResult",
@@ -20,4 +29,10 @@ __all__ = [
     "CalibrationAuditReport",
     "ClassCalibrationMetrics",
     "ReliabilityBin",
+    "FeatureImportanceEngine",
+    "FeatureImportanceItem",
+    "PredictionFactorExplanation",
+    "SinglePredictionExplanation",
+    "FeatureImportanceReport",
+    "CAUSALITY_DISCLAIMER",
 ]
