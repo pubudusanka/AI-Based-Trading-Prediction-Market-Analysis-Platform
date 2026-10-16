@@ -8,6 +8,17 @@ from src.training.baseline import (
     MajorityClassBaseline,
     StratifiedRandomBaseline,
 )
+from src.training.preprocessing import MLFeaturePipeline
+from src.training.models import (
+    BaseTradingModel,
+    LogisticRegressionModel,
+    RandomForestModel,
+    XGBoostModel,
+)
+from src.training.comparison import (
+    ModelComparisonRunner,
+    BenchmarkComparisonReport,
+)
 
 __all__ = [
     "BaselineStrategy",
@@ -16,4 +27,11 @@ __all__ = [
     "MomentumBaselineStrategy",
     "MajorityClassBaseline",
     "StratifiedRandomBaseline",
+    "MLFeaturePipeline",
+    "BaseTradingModel",
+    "LogisticRegressionModel",
+    "RandomForestModel",
+    "XGBoostModel",
+    "ModelComparisonRunner",
+    "BenchmarkComparisonReport",
 ]
