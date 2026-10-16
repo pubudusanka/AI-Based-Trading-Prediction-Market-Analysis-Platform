@@ -295,7 +295,7 @@ class RuleBasedBaselineStrategy(BaselineStrategy):
         preds[bull_mask] = self.LABEL_UP
         preds[bear_mask] = self.LABEL_DOWN
 
-        return pd.Series(preds, index=df.index)
+        return pd.Series(cast(Any, preds), index=df.index)
 
     def predict_proba(self, df: pd.DataFrame) -> pd.DataFrame:
         preds = self.predict(df)
@@ -338,7 +338,7 @@ class MomentumBaselineStrategy(BaselineStrategy):
         preds[bull_mask] = self.LABEL_UP
         preds[bear_mask] = self.LABEL_DOWN
 
-        return pd.Series(preds, index=df.index)
+        return pd.Series(cast(Any, preds), index=df.index)
 
     def predict_proba(self, df: pd.DataFrame) -> pd.DataFrame:
         preds = self.predict(df)
@@ -369,7 +369,7 @@ class MajorityClassBaseline(BaselineStrategy):
 
     def predict(self, df: pd.DataFrame) -> pd.Series:
         n = len(df)
-        return pd.Series(np.full(n, self.constant_label), index=df.index)
+        return pd.Series(cast(Any, np.full(n, self.constant_label)), index=df.index)
 
     def predict_proba(self, df: pd.DataFrame) -> pd.DataFrame:
         n = len(df)
@@ -404,7 +404,7 @@ class StratifiedRandomBaseline(BaselineStrategy):
         rng = np.random.default_rng(self.seed)
         choices = [-1.0, 0.0, 1.0]
         preds = rng.choice(choices, size=len(df), p=self.probs)
-        return pd.Series(preds, index=df.index)
+        return pd.Series(cast(Any, preds), index=df.index)
 
     def predict_proba(self, df: pd.DataFrame) -> pd.DataFrame:
         n = len(df)
