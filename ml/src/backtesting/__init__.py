@@ -1,6 +1,6 @@
 """
-Realistic Backtesting Engine with Frictions, Sizing, and Risk Metrics.
-Reference: Section 25 (Phase 20) & Section 26 (Phase 21) of Implementation Plan.
+Realistic Backtesting Engine with Frictions, Sizing, Risk Metrics, Anti-Overfitting, and Paper Trading.
+Reference: Section 25 (Phase 20), Section 26 (Phase 21), Section 27 (Phase 22), Section 28 (Phase 23).
 """
 
 from src.backtesting.trade import Trade
@@ -19,6 +19,20 @@ from src.backtesting.engine import (
     BacktestEngine,
     BacktestResult,
 )
+from src.backtesting.overfitting import (
+    DeflatedSharpeCalculator,
+    DeflatedSharpeResult,
+    FrictionStressTester,
+    StressTestScenario,
+    AntiOverfittingAuditor,
+    AntiOverfittingReport,
+)
+from src.backtesting.paper import (
+    PaperTradingEngine,
+    VirtualOrder,
+    VirtualPosition,
+    VirtualTradeRecord,
+)
 
 __all__ = [
     "Trade",
@@ -31,4 +45,14 @@ __all__ = [
     "MetricsCalculator",
     "BacktestEngine",
     "BacktestResult",
+    "DeflatedSharpeCalculator",
+    "DeflatedSharpeResult",
+    "FrictionStressTester",
+    "StressTestScenario",
+    "AntiOverfittingAuditor",
+    "AntiOverfittingReport",
+    "PaperTradingEngine",
+    "VirtualOrder",
+    "VirtualPosition",
+    "VirtualTradeRecord",
 ]
