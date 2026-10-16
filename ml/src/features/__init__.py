@@ -5,6 +5,7 @@ from .patterns import CandlestickPatternEngine
 from .structure import MarketStructureEngine
 from .fibonacci import FibonacciEngine
 from .dataset import FeatureDataset, FeatureDatasetBuilder, FeatureDatasetMetadata
+from .labels import LabelEngine
 
 __all__ = [
     "FeatureEngine",
@@ -14,6 +15,7 @@ __all__ = [
     "FeatureDataset",
     "FeatureDatasetBuilder",
     "FeatureDatasetMetadata",
+    "LabelEngine",
 ]
 
 
