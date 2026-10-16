@@ -124,8 +124,8 @@ class LabelEngine:
                 future_ret_20[i] = (fut_closes[hz - 1] - entry_price) / entry_price
                 target_binary[i] = 1.0 if future_ret_20[i] > 0 else 0.0
 
-            max_future_ret[i] = (np.max(fut_highs) - entry_price) / entry_price
-            min_future_ret[i] = (np.min(fut_lows) - entry_price) / entry_price
+            max_future_ret[i] = (float(fut_highs.max()) - entry_price) / entry_price
+            min_future_ret[i] = (float(fut_lows.min()) - entry_price) / entry_price
 
             # 2. Triple Barrier Evaluation
             tp_step: Optional[int] = None

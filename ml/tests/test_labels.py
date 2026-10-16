@@ -152,10 +152,10 @@ def test_horizon_boundary_tail_candles():
 
     # Valid range: 0 .. (n - horizon - 1) = 0 .. 29 (30 candles)
     valid_slice = labels.iloc[: n - horizon]
-    assert np.all(valid_slice["is_target_valid"] == True)
+    assert bool(valid_slice["is_target_valid"].all())
 
     # Tail candles: 30 .. 49 (20 candles)
     tail_slice = labels.iloc[n - horizon :]
-    assert np.all(tail_slice["is_target_valid"] == False)
-    assert np.all(tail_slice["target_label_name"] == "UNLABELLED")
-    assert np.all(np.isnan(tail_slice["target_triple_barrier"]))
+    assert bool((~tail_slice["is_target_valid"]).all())
+    assert bool((tail_slice["target_label_name"] == "UNLABELLED").all())
+    assert bool(tail_slice["target_triple_barrier"].isna().all())
