@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@SuppressWarnings("null")
 public class MlServiceGateway {
 
     private static final Logger log = LoggerFactory.getLogger(MlServiceGateway.class);
