@@ -4,9 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -18,6 +20,11 @@ import java.util.Optional;
 public class MlServiceGateway {
 
     private static final Logger log = LoggerFactory.getLogger(MlServiceGateway.class);
+
+    private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE =
+        new ParameterizedTypeReference<>() {};
+    private static final ParameterizedTypeReference<List<Map<String, Object>>> LIST_MAP_TYPE =
+        new ParameterizedTypeReference<>() {};
 
     private final RestTemplate restTemplate;
     private final String mlServiceUrl;
@@ -35,7 +42,13 @@ public class MlServiceGateway {
 
     public boolean isHealthy() {
         try {
-            ResponseEntity<Map> resp = restTemplate.getForEntity(mlServiceUrl + "/health", Map.class);
+            String url = mlServiceUrl + "/health";
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                MAP_TYPE
+            );
             return resp.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
             log.warn("ML Service health check failed at {}: {}", mlServiceUrl, e.getMessage());
@@ -43,13 +56,17 @@ public class MlServiceGateway {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listRegisteredModels(String symbol, String timeframe) {
         try {
-            String url = String.format("%s/models?symbol=%s&timeframe=%s", mlServiceUrl, symbol, timeframe);
-            ResponseEntity<List> resp = restTemplate.getForEntity(url, List.class);
+            String url = mlServiceUrl + "/models?symbol=" + symbol + "&timeframe=" + timeframe;
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                LIST_MAP_TYPE
+            );
             if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
-                return (List<Map<String, Object>>) resp.getBody();
+                return resp.getBody();
             }
         } catch (Exception e) {
             log.warn("Failed to fetch models from ML service: {}", e.getMessage());
@@ -57,12 +74,18 @@ public class MlServiceGateway {
         return List.of();
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<Map<String, Object>> requestPrediction(Map<String, Object> requestBody) {
         try {
-            ResponseEntity<Map> resp = restTemplate.postForEntity(mlServiceUrl + "/predict", requestBody, Map.class);
+            String url = mlServiceUrl + "/predict";
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                MAP_TYPE
+            );
             if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
-                return Optional.of((Map<String, Object>) resp.getBody());
+                return Optional.ofNullable(resp.getBody());
             }
         } catch (Exception e) {
             log.error("ML service /predict call failed: {}", e.getMessage());
@@ -70,12 +93,18 @@ public class MlServiceGateway {
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<Map<String, Object>> requestSignal(Map<String, Object> requestBody) {
         try {
-            ResponseEntity<Map> resp = restTemplate.postForEntity(mlServiceUrl + "/signal", requestBody, Map.class);
+            String url = mlServiceUrl + "/signal";
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                MAP_TYPE
+            );
             if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
-                return Optional.of((Map<String, Object>) resp.getBody());
+                return Optional.ofNullable(resp.getBody());
             }
         } catch (Exception e) {
             log.error("ML service /signal call failed: {}", e.getMessage());

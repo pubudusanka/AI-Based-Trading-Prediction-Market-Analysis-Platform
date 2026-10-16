@@ -1,7 +1,6 @@
 package com.aitrading.service;
 
 import com.aitrading.dto.ModelVersionDto;
-import com.aitrading.model.ModelVersion;
 import com.aitrading.repository.ModelVersionRepository;
 import org.springframework.stereotype.Service;
 

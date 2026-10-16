@@ -46,6 +46,9 @@ public class PredictionService {
     }
 
     public Optional<PredictionDto> getPredictionById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
         return predictionRepository.findById(id).map(this::mapToDto);
     }
 

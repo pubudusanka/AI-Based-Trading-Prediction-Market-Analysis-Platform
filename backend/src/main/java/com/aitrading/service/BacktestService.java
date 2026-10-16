@@ -29,6 +29,9 @@ public class BacktestService {
     }
 
     public Optional<BacktestResultDto> getBacktestById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
         return backtestRunRepository.findById(id).map(this::mapToDto);
     }
 

@@ -1,7 +1,6 @@
 package com.aitrading.controller;
 
 import com.aitrading.dto.BacktestResultDto;
-import com.aitrading.dto.ModelVersionDto;
 import com.aitrading.service.BacktestService;
 import com.aitrading.service.ModelService;
 import org.junit.jupiter.api.Test;
@@ -14,11 +13,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest({BacktestController.class, ModelController.class})
