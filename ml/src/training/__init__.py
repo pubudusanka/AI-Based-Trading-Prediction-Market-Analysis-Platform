@@ -19,6 +19,12 @@ from src.training.comparison import (
     ModelComparisonRunner,
     BenchmarkComparisonReport,
 )
+from src.training.validation import (
+    PurgedWalkForwardCV,
+    WalkForwardFoldResult,
+    WalkForwardValidationReport,
+    WalkForwardValidator,
+)
 
 __all__ = [
     "BaselineStrategy",
@@ -34,4 +40,8 @@ __all__ = [
     "XGBoostModel",
     "ModelComparisonRunner",
     "BenchmarkComparisonReport",
+    "PurgedWalkForwardCV",
+    "WalkForwardFoldResult",
+    "WalkForwardValidationReport",
+    "WalkForwardValidator",
 ]
