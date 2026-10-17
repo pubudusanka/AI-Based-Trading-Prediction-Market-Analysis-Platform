@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../components/Header";
 import MetricCards from "../components/MetricCards";
 import CandleChart from "../components/CandleChart";
@@ -19,6 +19,7 @@ import {
   fetchBacktestMetrics,
   getModelInfo,
   fetchDataQuality,
+  fetchNotificationHistory,
 } from "../services/api";
 
 import {
@@ -29,42 +30,65 @@ import {
   BacktestMetricsData,
   ModelInfoData,
   DataQualityData,
+  NotificationItem,
 } from "../types/market";
+
+import { useMarketStream } from "../services/useMarketStream";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [symbol, setSymbol] = useState("BTC/USDT");
   const [timeframe, setTimeframe] = useState("15m");
 
-  const [candles, setCandles] = useState<Candle[]>([]);
+  const [initialCandles, setInitialCandles] = useState<Candle[]>([]);
   const [prediction, setPrediction] = useState<PredictionData | null>(null);
   const [signal, setSignal] = useState<TradingSignalData | null>(null);
   const [risk, setRisk] = useState<RiskStatusData | null>(null);
   const [backtest, setBacktest] = useState<BacktestMetricsData | null>(null);
   const [modelInfo, setModelInfo] = useState<ModelInfoData | null>(null);
   const [quality, setQuality] = useState<DataQualityData | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleNewNotification = useCallback((ntf: NotificationItem) => {
+    setNotifications((prev) => [ntf, ...prev.slice(0, 49)]);
+  }, []);
+
+  const {
+    candles,
+    livePrice,
+    connectionStatus,
+    streamActive,
+    toggleStream,
+  } = useMarketStream(initialCandles, {
+    symbol,
+    timeframe,
+    enabled: true,
+    onNewNotification: handleNewNotification,
+  });
 
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
       setLoading(true);
-      const [cList, pred, sig, bt, q] = await Promise.all([
+      const [cList, pred, sig, bt, q, notifs] = await Promise.all([
         fetchCandles(symbol, timeframe, 60),
         fetchLatestPrediction(symbol, timeframe),
         fetchLatestSignal(symbol, timeframe),
         fetchBacktestMetrics(symbol),
         fetchDataQuality(symbol, timeframe),
+        fetchNotificationHistory(15),
       ]);
 
       if (isMounted) {
-        setCandles(cList);
+        setInitialCandles(cList);
         setPrediction(pred);
         setSignal(sig);
         setRisk(getRiskStatus());
         setBacktest(bt);
         setModelInfo(getModelInfo());
         setQuality(q);
+        setNotifications(notifs || []);
         setLoading(false);
       }
     }
@@ -75,7 +99,18 @@ export default function DashboardPage() {
     };
   }, [symbol, timeframe]);
 
-  const currentPrice = candles.length > 0 ? candles[candles.length - 1].close : 67320.0;
+  const handleClearNotifications = () => {
+    setNotifications([]);
+  };
+
+  const handleMarkNotificationRead = (id?: string) => {
+    if (!id) return;
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const currentPrice = livePrice || (candles.length > 0 ? candles[candles.length - 1].close : 67320.0);
   const firstPrice = candles.length > 0 ? candles[0].open : 66500.0;
   const priceChangePct = ((currentPrice - firstPrice) / firstPrice) * 100.0;
 
@@ -110,6 +145,13 @@ export default function DashboardPage() {
         setSymbol={setSymbol}
         timeframe={timeframe}
         setTimeframe={setTimeframe}
+        livePrice={currentPrice}
+        connectionStatus={connectionStatus}
+        streamActive={streamActive}
+        toggleStream={toggleStream}
+        notifications={notifications}
+        onClearNotifications={handleClearNotifications}
+        onMarkNotificationRead={handleMarkNotificationRead}
       />
 
       <div className="container">

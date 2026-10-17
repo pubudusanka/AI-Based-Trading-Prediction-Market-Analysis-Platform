@@ -114,3 +114,22 @@ export interface DataQualityData {
   isFresh: boolean;
   statusMessage: string;
 }
+
+export interface NotificationItem {
+  id?: string;
+  type?: "BUY_SIGNAL" | "SELL_SIGNAL" | "RISK_ALERT" | "DATA_QUALITY_ALERT" | "INFO";
+  title: string;
+  message: string;
+  timestamp: string;
+  symbol?: string;
+  signal?: string;
+  confidence?: number;
+  read?: boolean;
+}
+
+export interface NotificationSettings {
+  notificationsEnabled: boolean;
+  soundEnabled: boolean;
+  minConfidenceThreshold: number;
+}
+
